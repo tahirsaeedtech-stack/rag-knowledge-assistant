@@ -9,6 +9,7 @@ from qdrant_client.models import (
 
 from app.config import (
     EMBEDDING_DIMENSION,
+    QDRANT_API_KEY,
     QDRANT_COLLECTION,
     QDRANT_URL,
 )
@@ -18,7 +19,10 @@ class VectorStoreService:
 
     def __init__(self):
         self.client = QdrantClient(
-            url=QDRANT_URL
+            url=QDRANT_URL,
+            api_key=QDRANT_API_KEY or None,
+            timeout=30,
+
         )
 
         self.collection_name = (
