@@ -1,10 +1,12 @@
 import uuid
 
 from qdrant_client import QdrantClient, models
+from qdrant_client.models import PayloadSchemaType
 from qdrant_client.models import (
     Distance,
     PointStruct,
     VectorParams,
+    PayloadSchemaType,
 )
 
 from app.config import (
@@ -42,6 +44,16 @@ class VectorStoreService:
                     size=EMBEDDING_DIMENSION,
                     distance=Distance.COSINE,
                 ),
+            )
+            self.client.create_payload_index(
+                collection_name=QDRANT_COLLECTION,
+                field_name="file_hash",
+                field_schema=PayloadSchemaType.KEYWORD,
+            )
+            self.client.create_payload_index(
+                collection_name=self.collection_name,
+                field_name="document_id",
+                field_schema=PayloadSchemaType.KEYWORD,
             )
 
     def store_chunks(

@@ -1,10 +1,10 @@
+
 from fastapi import FastAPI
 
 from app.api.documents import router as documents_router
 from app.api.search import router as search_router
 from app.api.chat import router as chat_router
 from fastapi.middleware.cors import CORSMiddleware
-
 
 app = FastAPI(
     title="RAG Knowledge Assistant API",
@@ -17,6 +17,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://rag-knowledge-assistant-csqivupf6-tahir-ai-portfolio.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],

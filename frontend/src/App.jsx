@@ -6,9 +6,16 @@ import "./index.css";
 function App() {
   const [document, setDocument] = useState(null);
 
-  const [sessionId] = useState(() =>
-    crypto.randomUUID()
+
+  const [sessionId, setSessionId] = useState(
+    () => crypto.randomUUID()
   );
+
+  const handleUploadSuccess = (newDocument) => {
+    setDocument(newDocument);
+    setSessionId(crypto.randomUUID());
+  };
+
 
   return (
     <div className="app">
@@ -30,9 +37,8 @@ function App() {
 
       <main className="main-layout">
         <aside className="sidebar">
-          <FileUpload
-            onUploadSuccess={setDocument}
-          />
+
+          <FileUpload onUploadSuccess={handleUploadSuccess} />
 
           {document && (
             <div className="document-card">
@@ -61,10 +67,13 @@ function App() {
         </aside>
 
         <section className="chat-section">
+
           <ChatBox
+            key={document?.document_id || "no-document"}
             documentId={document?.document_id}
             sessionId={sessionId}
           />
+
         </section>
       </main>
     </div>

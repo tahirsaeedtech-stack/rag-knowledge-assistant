@@ -1,21 +1,38 @@
-name: RAG Backend CI
+
+name: RAG Full-Stack CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - "hardening/**"
 
   pull_request:
-    branches: [main]
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
-  test:
+  # ======================================
+  # BACKEND TESTING
+  # ======================================
+  backend-tests:
+    name: FastAPI Backend Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       qdrant:
-        image: qdrant/qdrant:latest
+        image: qdrant/qdrant:v1.15.5
         ports:
           - 6333:6333
+        options: >-
+          --health-cmd "bash -c 'echo > /dev/tcp/127.0.0.1/6333'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
     defaults:
       run:
@@ -25,26 +42,66 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
+          cache: pip
           cache-dependency-path: backend/requirements.txt
 
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
 
-      - name: Install CPU PyTorch
-        run: pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Install CPU-only PyTorch
+        run: |
+          python -m pip install torch \
+            --index-url https://download.pytorch.org/whl/cpu
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Install backend dependencies
+        run: python -m pip install -r requirements.txt
 
-      - name: Run tests
+      - name: Install testing dependencies
+        run: python -m pip install pytest pytest-asyncio httpx
+
+      - name: Check Python syntax
+        run: python -m compileall -q app
+
+      - name: Run backend tests
         env:
           QDRANT_URL: http://localhost:6333
           QDRANT_COLLECTION: rag_documents
           OPENROUTER_API_KEY: test-key
           OPENROUTER_MODEL: openrouter/free
-        run: pytest -v
+        run: python -m pytest -v
+
+  # ======================================
+  # FRONTEND TESTING
+  # ======================================
+  frontend-checks:
+    name: React Frontend Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Check React code quality
+        run: npm run lint
+
+      - name: Build React application
+        run: npm run build
